@@ -122,9 +122,6 @@ def process_413(text, _tp, request_json, responses):
 
 
 def morp_process(text, _tp, is_counting=False):
-    if not text.strip():
-        return {}
-
     morphemes_list = []
     morphemes_cnt = {}
     global accessKey
@@ -199,24 +196,14 @@ def add_preview(_item, _index, _cnt_list):
         i_list.append(_item['title'])
     else:
         i_list.append(None)
-    if int(_item['media']) == 100:
-        if re.findall(r'\d+/\d+/\d+ \d+:\d+', _item['date']):
-            i_list.append(re.sub(r'(\d+)/(\d+)/(\d+) (\d+):(\d+)', r'\1-\2-\3 \4:\5', _item['date']))
-        else:
-            i_list.append(_item['date'])
-    else:
-        i_list.append(_item['date'])
+    i_list.append(_item['date'])
     if 'writer' not in _item:
         i_list.append('익명')
     else:
         i_list.append(_item['writer'])
     i_list.append(int(_item['media']))
     if 'content' in _item:
-        _item['content'] = _item['content'].strip()
-        if len(_item['content']) > 30:
-            i_list.append(_item['content'][:30] + '...')
-        else:
-            i_list.append(_item['content'])
+        i_list.append(_item['content'])
     else:
         i_list.append(None)
     i_list.append(_item['url'])
@@ -467,13 +454,17 @@ def process_main(table_name, cycle, is_first=False):
                     cont_data = None
                     title_data = None
                     if 'content' in item:
-                        data = morp_process(item['content'], tp_cont, is_counting=True)
-                        if 'morp' in data:
-                            cont_data = data['morp']
-                        elif 'end' in data:
-                            break
-                        if 'count' in data:
-                            cnt_list = data['count']
+                        item['content'] = item['content'].strip()
+                        if not item['content']:
+                            item['content'] = None
+                        else:
+                            data = morp_process(item['content'], tp_cont, is_counting=True)
+                            if 'morp' in data:
+                                cont_data = data['morp']
+                            elif 'end' in data:
+                                break
+                            if 'count' in data:
+                                cnt_list = data['count']
                     if 'title' in item:
                         data = morp_process(item['title'], tp_title)
                         if 'morp' in data:
