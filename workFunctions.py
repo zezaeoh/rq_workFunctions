@@ -233,7 +233,7 @@ def add_preview(_item, _index, _cnt_list):
 def get_dictionary_from_mysql():
     global conn, mem_dictionary
     with conn.cursor() as cursor:
-        sql = "SELECT * FROM dictionary"
+        sql = "SELECT * FROM dumy_dictionary"
         cursor.execute(sql)
         for row in cursor.fetchall():
             if row[1] not in mem_dictionary:
@@ -245,7 +245,7 @@ def get_dictionary_from_mysql():
 def add_new_dictionary_item(morp, m_type, senti_score, spam_score):
     global conn, mem_dictionary
     with conn.cursor() as cursor:
-        sql = 'INSERT INTO dictionary (morp, m_type, senti_score, spam_score) VALUES (%s, %s, %s, %s)'
+        sql = 'INSERT INTO dumy_dictionary (morp, m_type, senti_score, spam_score) VALUES (%s, %s, %s, %s)'
         cursor.execute(sql, (morp, m_type, senti_score, spam_score))
         if morp in mem_dictionary:
             mem_dictionary[morp][m_type] = [cursor.lastrowid, senti_score, spam_score]
@@ -282,7 +282,7 @@ def add_preview_to_mysql():
     with conn.cursor() as cursor:
         sql = '''
         INSERT IGNORE INTO
-        content (r_id, title, date, writer, media, content, url, morp1, cnt1, morp2, cnt2, morp3, cnt3, morp4, cnt4, morp5, cnt5, morp6, cnt6, morp7, cnt7, morp8, cnt8)
+        test_content (r_id, title, date, writer, media, content, url, morp1, cnt1, morp2, cnt2, morp3, cnt3, morp4, cnt4, morp5, cnt5, morp6, cnt6, morp7, cnt7, morp8, cnt8)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         '''
         for i_list in mem_preview_content_list:
@@ -292,7 +292,7 @@ def add_preview_to_mysql():
 def add_morp_table_to_mysql():
     global conn, mem_morp_table_list
     with conn.cursor() as cursor:
-        sql = 'INSERT INTO morp_table (r_id, ctype, d_id) VALUES (%s, %s, %s)'
+        sql = 'INSERT INTO test_morp_table (r_id, ctype, d_id) VALUES (%s, %s, %s)'
         for i_list in mem_morp_table_list:
             cursor.execute(sql, i_list)
 
