@@ -13,7 +13,6 @@ import urllib3
 import json
 import time
 import pandas as pd
-import re
 import pymysql.cursors
 import settings
 
@@ -312,7 +311,7 @@ def get_curr_n_keyword():
                 for morp in data['morp']:
                     sql = 'INSERT INTO n_keyword (n_keyword, n_order, date) VALUES (%s, %s, %s)'
                     cursor.execute(sql, (morp[0], a[0], date))
-                    re_list.append([cursor.lastrowid, morp, a[0], date])
+                    re_list.append([cursor.lastrowid, morp[0], a[0], date])
             elif 'end' in data:
                 return None
             else:
