@@ -9,6 +9,7 @@ from collections import OrderedDict
 import os
 import boto3
 import sys
+import re
 import urllib3
 import json
 import time
@@ -26,6 +27,7 @@ mem_morp_table_list = None
 mem_dictionary = None
 mem_preview_content_list = None
 mem_today_chart = None
+mem_item_cnt = None
 n_keyword = None
 conn = None
 
@@ -188,6 +190,18 @@ def morp_process(text, _tp, is_counting=False):
     return _data
 
 
+def add_count(_media, _date):
+    global mem_item_cnt
+    hour = re.sub(r'(\d+)-(\d+)-(\d+) (\d+).*', r'\1-\2-\3 \4:00:00', _date)
+    if _media not in mem_item_cnt:
+        mem_item_cnt[_media] = {hour: 1}
+    else:
+        if hour not in mem_item_cnt[_media]:
+            mem_item_cnt[_media][hour] = 1
+        else:
+            mem_item_cnt[_media][hour] += 1
+
+
 def add_preview(_item, _index, _cnt_list):
     global mem_preview_content_list
     i_list = [_index]
@@ -294,6 +308,20 @@ def add_today_chart_to_mysql():
                                      mem_today_chart[media][n_id]['r_id']))
 
 
+def add_count_to_mysql():
+    global conn, mem_item_cnt
+    with conn.cursor() as cursor:
+        sql_ck = 'SELECT EXISTS (select * from today_cnt where media = %s and date = %s limit 1) as success'
+        for media in mem_item_cnt:
+            for date in mem_item_cnt[media]:
+                cursor.execute(sql_ck, (media, date))
+                if cursor.fetchone()[0] == 0:
+                    sql = 'INSERT INTO today_cnt (cont_cnt, media, date) VALUES (%s, %s, %s)'
+                else:
+                    sql = 'UPDATE today_cnt SET cont_cnt = cont_cnt + %s WHERE media = %s and date = %s'
+                cursor.execute(sql, (mem_item_cnt[media][date], media, date))
+
+
 def get_curr_n_keyword():
     global conn
     tmp_list = []
@@ -389,7 +417,7 @@ def process_main(table_name, cycle, is_first=False):
         return 909
 
     global openApiURL, accessKeys, accessKey, analysisCode, http, mem_morp_table_list,\
-        mem_dictionary, mem_preview_content_list, mem_today_chart, n_keyword, conn
+        mem_dictionary, mem_preview_content_list, mem_today_chart, mem_item_cnt, n_keyword, conn
 
     openApiURL = "http://aiopen.etri.re.kr:8000/WiseNLU"
     accessKeys = settings.ACCESSKEYS
@@ -406,6 +434,7 @@ def process_main(table_name, cycle, is_first=False):
     mem_morp_table_list = []
     mem_dictionary = {}
     mem_preview_content_list = []
+    mem_item_cnt = {}
 
     try:
         conn = pymysql.connect(
@@ -468,6 +497,7 @@ def process_main(table_name, cycle, is_first=False):
                         data = morp_process(item['title'], tp_title)
                         if 'morp' in data:
                             title_data = data['morp']
+                    add_count(media, item['date'])
                     add_preview(item, index, cnt_list)
                     if cont_data:
                         add_morp_in_mem_morp_table(index, cont_data, media, tp_cont)
@@ -485,6 +515,7 @@ def process_main(table_name, cycle, is_first=False):
         print(str(e), file=sys.stderr)
         status = 606
     finally:
+        add_count_to_mysql()
         add_preview_to_mysql()
         add_morp_table_to_mysql()
         add_today_chart_to_mysql()
